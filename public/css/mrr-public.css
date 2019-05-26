@@ -1,0 +1,68 @@
+/**
+ * All of the CSS for your public-facing functionality should be
+ * included in this file.
+ */
+
+.mrr-box {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.mrr-box > div {
+  margin: 20px !important;
+}
+
+.mrr-reviews {
+  width: 80%;
+}
+
+.mrr-quote {
+  font-size: 5em;
+  color: orange;
+  text-align: center;
+}
+
+ .mrr-previous-button, .mrr-next-button {
+   width: 10%;
+}
+
+.mrr-review {
+  display: none;
+  text-align: center;
+}
+
+.mrr-review-rating span {
+  display: inline-block;
+  vertical-align: middle;
+  font-weight: bold;
+}
+
+.mrr-review-rating .dashicons {
+  color: #FFD700;
+}
+
+.mrr-reviewer {
+  text-align: center;
+}
+
+.mrr-reviewer-image img {
+  width: 50px;
+  border-radius: 50%;
+}
+
+.mrr-reviewer-detail {
+  font-size: 0.8em;
+}
+
+.mrr-reviewer-name {
+  font-weight: bold;
+}
+
+/* .mrr-review-source::before {
+  content: "(";
+}
+
+.mrr-review-source::after {
+  content: ")";
+} */
