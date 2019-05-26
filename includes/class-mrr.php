@@ -161,7 +161,7 @@ class MyRestaurantReviews
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_settings_page' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'initialize_settings' );
 		$this->loader->add_action( 'admin_post_mrr_options_form', $plugin_admin, 'handle_options_form_submission' );
-		$this->loader->add_action( 'mrr_cron_hook', $plugin_admin, 'get_latest_reviews' );
+		$this->loader->add_action( 'mrr_cron_hook', $plugin_admin, 'update_reviews' );
 	}
 
 	/**

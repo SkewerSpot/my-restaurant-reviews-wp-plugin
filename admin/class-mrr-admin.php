@@ -183,6 +183,8 @@ class MyRestaurantReviewsAdmin {
 
 		// Register a setting for each field
 		register_setting( 'mrr_settings', 'mrr_setting_general_polltime' );
+		register_setting( 'mrr_settings', 'mrr_setting_general_category' );
+		register_setting( 'mrr_settings', 'mrr_setting_general_maxreviews' );
 
 		// Add section
 		add_settings_section(
@@ -200,6 +202,22 @@ class MyRestaurantReviewsAdmin {
 			'my_restaurant_reviews',
 			'mrr_section_general',
 			[ 'label_for' => 'mrr_field_general_polltime' ]
+		);
+		add_settings_field(
+			'mrr_field_general_category',
+			__( 'Create posts for new reviews under category', 'ssmrr' ),
+			array( $this, 'mrr_field_general_category_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_general',
+			[ 'label_for' => 'mrr_field_general_category' ]
+		);
+		add_settings_field(
+			'mrr_field_general_maxreviews',
+			__( 'How many maximum reviews to fetch from each source?', 'ssmrr' ),
+			array( $this, 'mrr_field_general_maxreviews_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_general',
+			[ 'label_for' => 'mrr_field_general_maxreviews' ]
 		);
 
 	}
@@ -345,7 +363,7 @@ class MyRestaurantReviewsAdmin {
 					?>
 					<option value="<?php echo $sched_name ?>"
 						<?php echo $sched_name === $poll_time ? 'selected' : ''; ?>>
-						<?php echo $default_cron_schedules[ $sched_name ][ 'display' ] ?>
+						<?php echo $default_cron_schedules[ $sched_name ][ 'display' ]; ?>
 					</option>
 				<?php
 				}
@@ -353,6 +371,50 @@ class MyRestaurantReviewsAdmin {
 		</select>
 		<input id="btnCheckNow" type="submit" class="button-secondary"
 			value="<?php esc_attr_e( 'Check Now', 'ssmrr' ) ?>" />
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Category field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_general_category_html( $args ) {
+
+		$selected_category = get_option( 'mrr_setting_general_category', 0 );
+		?>
+		<select name="mrr_setting_general_category">
+			<option value=""><?php esc_html_e( 'DON\'T CREATE NEW POSTS' ) ?></option>
+			<?php
+				$categories = get_categories( array( 'hide_empty' => false ) );
+				foreach ( $categories as $category ) {
+					?>
+					<option value="<?php echo $category->cat_ID ?>"
+						<?php echo $category->cat_ID == $selected_category ? 'selected' : ''; ?>>
+						<?php echo $category->name; ?>
+					</option>
+				<?php
+				}
+			?>
+		</select>
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Max Reviews field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_general_maxreviews_html( $args ) {
+
+		$max_num = get_option( 'mrr_setting_general_maxreviews', 5 );
+		?>
+		<input type="number" name="mrr_setting_general_maxreviews" class="small-text"
+			value="<?php echo esc_attr( $max_num ); ?>" />
 	<?php
 
 	}
@@ -392,7 +454,9 @@ class MyRestaurantReviewsAdmin {
 		$mrr_settings = array(
 			'mrr_setting_zomato_apikey' => sanitize_key( $_POST[ 'mrr_setting_zomato_apikey' ] ),
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
-			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] )
+			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] ),
+			'mrr_setting_general_category' => absint( $_POST[ 'mrr_setting_general_category' ] ),
+			'mrr_setting_general_maxreviews' => absint( $_POST[ 'mrr_setting_general_maxreviews' ] )
 		);
 		foreach ( $mrr_settings as $key => $value ) {
 			$this->set_option( $key, $value );
@@ -417,44 +481,138 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
-	 * Gets restaurant reviews from various online sources,
-	 * such as Zomato, Google Maps, etc.
+	 * Gets latest restaurant reviews from various online sources,
+	 * such as Zomato, Google Maps, etc., stores them in cache,
+	 * and optionally adds them as posts under user-specified category.
 	 * 
 	 * @since			1.0.0
 	 */
-	public function get_latest_reviews() {
+	public function update_reviews() {
+
+		$max_num_reviews = get_option( 'mrr_setting_general_maxreviews' );
+		$latest_reviews = array_merge( array(), $this->get_zomato_reviews( $max_num_reviews ) );
+		$new_reviews = $this->find_new_reviews( $latest_reviews );
+
+		$review_category_id = get_option( 'mrr_setting_general_category' );
+		if ( $review_category_id != 0 ) {
+			foreach ( $new_reviews as $review ) {
+				$this->add_review_to_category( $review, $review_category_id );
+			}
+		}
+
+		$updated_reviews = array();
+		$cached_reviews = get_option( 'mrr_setting_reviews' );
+		if ( $cached_reviews ) {
+			$updated_reviews = array_merge( $cached_reviews, $new_reviews );
+		} else {
+			$updated_reviews = $new_reviews;
+		}
+
+		$this->set_option( 'mrr_setting_reviews', $updated_reviews );
+		$this->set_option( 'mrr_setting_last_updated', time() );
+
+	}
+
+	/**
+	 * Fetches latest $max_num reviews from Zomato Developer API,
+	 * and returns them is a normalized format.
+	 * 
+	 * @since			1.0.0
+	 */
+	private function get_zomato_reviews($max_num) {
 
 		$normalized_reviews = array();
 
-		// Fetch Zomato reviews
 		$zomato_apikey = get_option( 'mrr_setting_zomato_apikey' );
 		$zomato_restid = get_option( 'mrr_setting_zomato_restid' );
+
 		$zomato_api_args = array(
 			'headers' => array(
 				'user-key' => $zomato_apikey
 			)
 		);
-		$zomato_api_url = 'https://developers.zomato.com/api/v2.1/reviews?res_id='.$zomato_restid;
+		$zomato_api_url = 'https://developers.zomato.com/api/v2.1/reviews?res_id=' . $zomato_restid . '&count=' . $max_num;
 		$zomato_api_response = wp_remote_retrieve_body( wp_remote_get( $zomato_api_url, $zomato_api_args ) );
+		
 		if ( $zomato_api_response ) {
 			$zomato_api_response_json = json_decode( $zomato_api_response, true );
 			$reviews = $zomato_api_response_json[ 'user_reviews' ];
 			if ( is_array( $reviews ) ) {
 				foreach ( $reviews as $review ) {
-					array_push( $normalized_reviews, array(
+					$r = array(
 						'rating' => $review[ 'review' ][ 'rating' ],
 						'review_text' => $review[ 'review' ][ 'review_text' ],
 						'timestamp' => $review[ 'review' ][ 'timestamp' ],
 						'reviewer_name' => $review[ 'review' ][ 'user' ][ 'name' ],
 						'reviewer_image' => $review[ 'review' ][ 'user' ][ 'profile_image' ],
-						'source' => 'Zomato'
-					) );
+						'source' => 'Zomato',
+						'orig_id' => $review[ 'review' ][ 'id' ]
+					);
+					array_push( $normalized_reviews, $r );
 				}
 			}
 		}
 
-		$this->set_option( 'mrr_setting_reviews', $normalized_reviews );
-		$this->set_option( 'mrr_setting_last_updated', time() );
+		return $normalized_reviews;
+		
+	}
+
+	/**
+	 * Compares given with cached reviews and returns only the new ones.
+	 * 
+	 * @since			1.0.0
+	 */
+	private function find_new_reviews($reviews) {
+
+		$new_reviews = array();		
+
+		foreach ( $reviews as $review ) {
+			if ( $this->is_new_review( $review ) ) {
+				array_push( $new_reviews, $review );
+			}
+		}
+
+		return $new_reviews;
+
+	}
+
+	/**
+	 * Checks whether given review already exists in cache.
+	 * 
+	 * @since			1.0.0
+	 */
+	private function is_new_review( $review ) {
+
+		$stored_reviews = get_option( 'mrr_setting_reviews' );
+
+		if ( $stored_reviews && is_array( $review ) ) {
+			foreach ( $stored_reviews as $r ) {
+				if ( $r[ 'orig_id' ] === $review[ 'orig_id' ]
+						 && $r[ 'source' ] === $review[ 'source' ] ) {
+					return false;
+			 }
+			}
+		}
+
+		return true;
+
+	}
+
+	/**
+	 * Adds the given review as a new post to the specified category.
+	 * 
+	 * @since			1.0.0
+	 */
+	private function add_review_to_category($review, $category_id) {
+
+		$post = array(
+			'post_title' => $review[ 'reviewer_name' ] . ' (' . $review[ 'source' ] . ')',
+			'post_content' => $review[ 'review_text' ],
+			'post_category' => array( $category_id ),
+			'post_status' => 'publish'
+		);
+
+		return wp_insert_post( $post );
 
 	}
 
@@ -466,11 +624,13 @@ class MyRestaurantReviewsAdmin {
 	 * @since			1.0.0
 	 */
 	private function set_option($key, $value = '') {
+
 		if ( get_option( $key ) === false ) {
 			add_option( $key, $value );
 		} else {
 			update_option( $key, $value );
 		}
+
 	}
 
 }
