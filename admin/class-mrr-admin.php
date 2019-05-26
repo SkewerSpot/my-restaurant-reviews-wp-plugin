@@ -149,8 +149,7 @@ class MyRestaurantReviewsAdmin {
 		add_settings_section(
 			'mrr_section_zomato',
 			__( 'Zomato Settings', 'ssmrr' ),
-			null,
-			//array( $this, 'mrr_section_zomato_html' ),
+			array( $this, 'mrr_section_zomato_html' ),
 			'my_restaurant_reviews'
 		);
 
@@ -189,14 +188,14 @@ class MyRestaurantReviewsAdmin {
 		add_settings_section(
 			'mrr_section_general',
 			__( 'General Settings', 'ssmrr' ),
-			null,
+			array( $this, 'mrr_section_general_html' ),
 			'my_restaurant_reviews'
 		);
 
 		// Add fields
 		add_settings_field(
 			'mrr_field_general_polltime',
-			__( 'Check for new reviews every (mins)', 'ssmrr' ),
+			__( 'How frequently should we check for new reviews?', 'ssmrr' ),
 			array( $this, 'mrr_field_general_polltime_html' ),
 			'my_restaurant_reviews',
 			'mrr_section_general',
@@ -218,11 +217,10 @@ class MyRestaurantReviewsAdmin {
 		}
 	
 		// Add error/update messages
-		// Check if the user have submitted the settings
+		// Check if the user has submitted the settings
 		// WordPress will add the "settings-updated" $_GET parameter to the url
-		if ( isset( $_GET['settings-updated'] ) ) {
-			// Add settings saved message with the class of "updated"
-			add_settings_error( 'mrr_messages', 'mrr_message', __( 'Settings Saved', 'ssmrr' ), 'updated' );
+		if ( isset( $_GET[ 'settings-updated' ] ) ) {
+			add_settings_error( 'mrr_messages', 'mrr_message_settings', __( 'Settings Saved', 'ssmrr' ), 'updated' );
 		}
 	
 		// Show error/update messages
@@ -230,7 +228,7 @@ class MyRestaurantReviewsAdmin {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+			<form id="mrrOptionsForm" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 				<?php
 				// Under normal conditions, using the following WP function call
 				// would automatically add "action" and "nonce" hidden inputs,
@@ -266,9 +264,8 @@ class MyRestaurantReviewsAdmin {
 	public function mrr_section_zomato_html() {
 
 		?>
-		<div style="padding: 10px; font-style: italic; border: 1px solid #aaa;">
-			<?php echo esc_html_e( 'To get an API key, head to...', 'ssmrr' ); ?><br />
-			<?php echo esc_html_e( 'The restaurant id...', 'ssmrr' ); ?>
+		<div class="mrr-settings-section-notice">
+			<?php echo esc_html_e( 'This section contains settings related to Zomato.', 'ssmrr' ); ?>
 		</div>
 	<?php
 
@@ -315,6 +312,23 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Outputs the HTML for General section on plugin's options page.
+	 * Callable for add_settings_section.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_section_general_html() {
+
+		?>
+		<div class="mrr-settings-section-notice">
+			<?php echo esc_html_e( 'This section contains common settings, ' .
+														 'such as review refresh frequency, etc.', 'ssmrr' ); ?>
+		</div>
+	<?php
+
+	}
+
+	/**
 	 * Outputs the HTML for Poll Time field.
 	 * Callable for add_settings_field.
 	 * 
@@ -322,35 +336,24 @@ class MyRestaurantReviewsAdmin {
 	 */
 	public function mrr_field_general_polltime_html( $args ) {
 
-		$poll_time = get_option( 'mrr_setting_general_polltime', 15 );
+		$poll_time = get_option( 'mrr_setting_general_polltime', 'daily' );
 		?>
-		<input type="number" name="mrr_setting_general_polltime" class="small-text"
-			value="<?php echo $poll_time; ?>" />
-		<input type="submit" class="button-secondary"
+		<select name="mrr_setting_general_polltime">
+			<?php
+				$default_cron_schedules = wp_get_schedules();
+				foreach ( $default_cron_schedules as $sched_name => $sched_details ) {
+					?>
+					<option value="<?php echo $sched_name ?>"
+						<?php echo $sched_name === $poll_time ? 'selected' : ''; ?>>
+						<?php echo $default_cron_schedules[ $sched_name ][ 'display' ] ?>
+					</option>
+				<?php
+				}
+			?>
+		</select>
+		<input id="btnCheckNow" type="submit" class="button-secondary"
 			value="<?php esc_attr_e( 'Check Now', 'ssmrr' ) ?>" />
 	<?php
-
-	}
-
-	/**
-	 * Adds a custom cron schedule based on poll time option.
-	 *
-	 * @param array $schedules An array of non-default cron schedules.
-	 * @return array Filtered array of non-default cron schedules.
-	 * 
-	 * @since			1.0.0
-	 */
-	public function add_custom_cron_interval( $schedules ) {
-
-		$poll_time = get_option( 'mrr_setting_general_polltime' );
-		$poll_time_secs = ( (int) $poll_time ) * 60;
-
-		$schedules[ 'mrr_poll_interval' ] = array(
-			'interval' => $poll_time_secs,
-			'display' => __( 'Polling interval for My Restaurant Reviews plugin', 'ssmrr' )
-		);
-
-		return $schedules;
 
 	}
 
@@ -389,32 +392,27 @@ class MyRestaurantReviewsAdmin {
 		$mrr_settings = array(
 			'mrr_setting_zomato_apikey' => sanitize_key( $_POST[ 'mrr_setting_zomato_apikey' ] ),
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
-			'mrr_setting_general_polltime' => absint( $_POST[ 'mrr_setting_general_polltime' ] )
+			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] )
 		);
 		foreach ( $mrr_settings as $key => $value ) {
-			if ( get_option( $key ) === false ) {
-				add_option( $key, $value );
-			} else {
-				update_option( $key, $value );
-			}
+			$this->set_option( $key, $value );
 		}
 
 	}
 
 	/**
-	 * Updates plugin's custom Cron schedule as per poll time setting,
-	 * and re-schedules the Cron job.
+	 * Re-schedules the Cron job as per potentially new poll time setting.
 	 * 
 	 * @since			1.0.0
 	 */
 	public function update_cron() {
 
-		add_filter( 'cron_schedules', array( $this, 'add_custom_cron_interval' ) );
+		$poll_time = get_option( 'mrr_setting_general_polltime' );
 		if ( wp_next_scheduled( 'mrr_cron_hook' ) ) {
 			$timestamp = wp_next_scheduled( 'mrr_cron_hook' );
 			wp_unschedule_event( $timestamp, 'mrr_cron_hook' );
 		}
-		wp_schedule_event( time(), 'hourly', 'mrr_cron_hook' );
+		wp_schedule_event( time(), $poll_time, 'mrr_cron_hook' );
 
 	}
 
@@ -455,12 +453,24 @@ class MyRestaurantReviewsAdmin {
 			}
 		}
 
-		if ( get_option( 'mrr_setting_reviews' ) === false ) {
-			add_option( 'mrr_setting_reviews', $normalized_reviews );
-		} else {
-			update_option( 'mrr_setting_reviews', $normalized_reviews );
-		}
+		$this->set_option( 'mrr_setting_reviews', $normalized_reviews );
+		$this->set_option( 'mrr_setting_last_updated', time() );
 
+	}
+
+	/**
+	 * Sets an option in database:
+	 * creates new option if it doesn't exist,
+	 * updates existing option otherwise.
+	 * 
+	 * @since			1.0.0
+	 */
+	private function set_option($key, $value = '') {
+		if ( get_option( $key ) === false ) {
+			add_option( $key, $value );
+		} else {
+			update_option( $key, $value );
+		}
 	}
 
 }
