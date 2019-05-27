@@ -185,6 +185,7 @@ class MyRestaurantReviewsAdmin {
 		register_setting( 'mrr_settings', 'mrr_setting_general_polltime' );
 		register_setting( 'mrr_settings', 'mrr_setting_general_category' );
 		register_setting( 'mrr_settings', 'mrr_setting_general_maxreviews' );
+		register_setting( 'mrr_settings', 'mrr_setting_general_minrating' );
 
 		// Add section
 		add_settings_section(
@@ -218,6 +219,14 @@ class MyRestaurantReviewsAdmin {
 			'my_restaurant_reviews',
 			'mrr_section_general',
 			[ 'label_for' => 'mrr_field_general_maxreviews' ]
+		);
+		add_settings_field(
+			'mrr_field_general_minrating',
+			__( 'Do not show reviews with rating below (1-5)', 'ssmrr' ),
+			array( $this, 'mrr_field_general_minrating_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_general',
+			[ 'label_for' => 'mrr_field_general_minrating' ]
 		);
 
 	}
@@ -420,6 +429,22 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Outputs the HTML for Min Rating field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_general_minrating_html( $args ) {
+
+		$max_num = get_option( 'mrr_setting_general_minrating', 4 );
+		?>
+		<input type="number" name="mrr_setting_general_minrating" class="small-text"
+			min="1" max="5" value="<?php echo esc_attr( $max_num ); ?>" />
+	<?php
+
+	}
+
+	/**
 	 * Handler for plugin's options page.
 	 * 
 	 * @since			1.0.0
@@ -456,7 +481,8 @@ class MyRestaurantReviewsAdmin {
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
 			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] ),
 			'mrr_setting_general_category' => absint( $_POST[ 'mrr_setting_general_category' ] ),
-			'mrr_setting_general_maxreviews' => absint( $_POST[ 'mrr_setting_general_maxreviews' ] )
+			'mrr_setting_general_maxreviews' => absint( $_POST[ 'mrr_setting_general_maxreviews' ] ),
+			'mrr_setting_general_minrating' => absint( $_POST[ 'mrr_setting_general_minrating' ] )
 		);
 		foreach ( $mrr_settings as $key => $value ) {
 			$this->set_option( $key, $value );
@@ -489,10 +515,13 @@ class MyRestaurantReviewsAdmin {
 	 */
 	public function update_reviews() {
 
+		// Fetch latest online reviews
 		$max_num_reviews = get_option( 'mrr_setting_general_maxreviews' );
+		$min_rating = absint( get_option( 'mrr_setting_general_minrating' ) );
 		$latest_reviews = array_merge( array(), $this->get_zomato_reviews( $max_num_reviews ) );
-		$new_reviews = $this->find_new_reviews( $latest_reviews );
+		$new_reviews = $this->find_new_reviews( $latest_reviews, $min_rating );
 
+		// (optionally) Create posts for new reviews
 		$review_category_id = get_option( 'mrr_setting_general_category' );
 		if ( $review_category_id != 0 ) {
 			foreach ( $new_reviews as $review ) {
@@ -500,6 +529,7 @@ class MyRestaurantReviewsAdmin {
 			}
 		}
 
+		// Update cache
 		$updated_reviews = array();
 		$cached_reviews = get_option( 'mrr_setting_reviews' );
 		if ( $cached_reviews ) {
@@ -507,7 +537,6 @@ class MyRestaurantReviewsAdmin {
 		} else {
 			$updated_reviews = $new_reviews;
 		}
-
 		$this->set_option( 'mrr_setting_reviews', $updated_reviews );
 		$this->set_option( 'mrr_setting_last_updated', time() );
 
@@ -558,16 +587,17 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
-	 * Compares given with cached reviews and returns only the new ones.
+	 * Compares given with cached reviews
+	 * and returns only the new ones with a minimum rating.
 	 * 
 	 * @since			1.0.0
 	 */
-	private function find_new_reviews($reviews) {
+	private function find_new_reviews($reviews, $min_rating) {
 
 		$new_reviews = array();		
 
 		foreach ( $reviews as $review ) {
-			if ( $this->is_new_review( $review ) ) {
+			if ( $review[ 'rating' ] >= $min_rating && $this->is_new_review( $review ) ) {
 				array_push( $new_reviews, $review );
 			}
 		}
