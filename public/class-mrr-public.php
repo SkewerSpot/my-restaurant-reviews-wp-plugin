@@ -120,13 +120,24 @@ class MyRestaurantReviewsPublic
 	public function mrr_shortcode_html($atts = [], $content = null)
 	{
 
-		// Get cached reviews and their settings from database
+		// Get cached reviews
 		$reviews = get_option( 'mrr_setting_reviews' );
-		$sort_order = get_option( 'mrr_setting_general_sortorder' );
-		$max_display_reviews = absint( get_option( 'mrr_setting_general_maxdisplayreviews' ) );
+		if ( ! $reviews ) {
+			return $this->no_reviews_message_html();
+		}
+
+		// Get display settings
+		$sort_order = get_option( 'mrr_setting_display_sortorder' );
+		$max_display_reviews = absint( get_option( 'mrr_setting_display_maxdisplayreviews' ) );
+		$min_rating = absint( get_option( 'mrr_setting_display_minrating' ) );
+
+		// Filter out reviews with rating less than min rating setting
+		foreach ( $reviews as $idx => $review ) {
+			if ( $review[ 'rating' ] < $min_rating ) unset( $reviews[ $idx ] );
+		}
 
 		// Sort the reviews array as per setting
-		if ( $reviews && $sort_order ) {
+		if ( $sort_order ) {
 			switch( $sort_order ) {
 				case 'timedesc':
 					$timestamps = array_column( $reviews, 'timestamp' );
@@ -149,7 +160,7 @@ class MyRestaurantReviewsPublic
 		$html .= '<button><span class="dashicons dashicons-arrow-left-alt2"></span></button>';
 		$html .= '</div>'; // end .mrr-previous-button
 		$html .= '<div class="mrr-reviews">';
-		$html .= '<div class="mrr-quote">“</div>';
+		$html .= '<div class="mrr-quote"><span class="dashicons dashicons-format-quote"></span></div>';
 		$review_idx = 0;
 		foreach ($reviews as $review) {
 			if ( $review_idx === $max_display_reviews ) break;
@@ -233,6 +244,23 @@ class MyRestaurantReviewsPublic
 	
 		return $random; 
 
-	} 
+	}
+
+	/**
+	 * Outputs HTML for no reviews error message.
+	 * 
+	 * @since    1.0.0
+	 */
+	private function no_reviews_message_html() {
+		
+		$html = '';
+		$html .= '<div class="mrr-message-box">';
+		$html .= __( 'Oh no! Did you forget to configure My Restaurant Reviews plugin?', 'ssmrr' );
+		$html .= '<br>';
+		$html .= __( 'You did configure? Then perhaps you\'ve got no reviews yet :(', 'ssmrr' );
+		$html .= '</div>';
+		return $html;
+
+	}
 
 }

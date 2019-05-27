@@ -481,10 +481,7 @@ class MyRestaurantReviewsAdmin {
 		$max_num = get_option( 'mrr_setting_display_minrating', 4 );
 		?>
 		<input type="number" name="mrr_setting_display_minrating" class="small-text"
-			min="1" max="5" value="<?php echo esc_attr( $max_num ); ?>" />
-		<p class="description">
-			<?php echo __( 'A change in this setting will only apply to future reviews.', 'ssmrr' ); ?>
-		</p>		
+			min="1" max="5" value="<?php echo esc_attr( $max_num ); ?>" />	
 	<?php
 
 	}
@@ -656,9 +653,8 @@ class MyRestaurantReviewsAdmin {
 
 		// Fetch latest online reviews
 		$max_num_reviews = get_option( 'mrr_setting_general_maxfetchreviews' );
-		$min_rating = absint( get_option( 'mrr_setting_general_minrating' ) );
 		$latest_reviews = array_merge( array(), $this->get_zomato_reviews( $max_num_reviews ) );
-		$new_reviews = $this->find_new_reviews( $latest_reviews, $min_rating );
+		$new_reviews = $this->find_new_reviews( $latest_reviews );
 
 		// (optionally) Create posts for new reviews
 		$review_category_id = get_option( 'mrr_setting_general_category' );
@@ -693,6 +689,8 @@ class MyRestaurantReviewsAdmin {
 
 		$zomato_apikey = get_option( 'mrr_setting_zomato_apikey' );
 		$zomato_restid = get_option( 'mrr_setting_zomato_restid' );
+
+		if ( ! $zomato_apikey || ! $zomato_restid ) return array();
 
 		$zomato_api_args = array(
 			'headers' => array(
@@ -731,12 +729,12 @@ class MyRestaurantReviewsAdmin {
 	 * 
 	 * @since			1.0.0
 	 */
-	private function find_new_reviews($reviews, $min_rating) {
+	private function find_new_reviews($reviews) {
 
 		$new_reviews = array();		
 
 		foreach ( $reviews as $review ) {
-			if ( $review[ 'rating' ] >= $min_rating && $this->is_new_review( $review ) ) {
+			if ( $this->is_new_review( $review ) ) {
 				array_push( $new_reviews, $review );
 			}
 		}
