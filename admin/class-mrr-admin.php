@@ -103,6 +103,26 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Add plugin action links.
+	 *
+	 * Add a link to the settings page on the plugins.php page.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param  array  $links List of existing plugin action links.
+	 * @return array         List of modified plugin action links.
+	 */
+	function add_action_links($links) {
+
+		$links = array_merge( $links, array(
+			'<a href="' . esc_url( admin_url( '/options-general.php?page=' . $this->plugin_name ) ) . '">' .
+			__( 'Settings', 'ssmrr' ) . '</a>'
+		) );
+		return $links;
+
+	}
+
+	/**
 	 * Add options for MRR page in Settings admin menu.
 	 * 
 	 * @since			1.0.0
@@ -127,10 +147,9 @@ class MyRestaurantReviewsAdmin {
 	 */
 	public function initialize_settings() {
 
-		// Add Zomato, Google Maps and TripAdvisor sections
 		$this->init_zomato_settings();
+		$this->init_display_settings();
 		$this->init_general_settings();
-		
 
 	}
 
@@ -175,6 +194,53 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Add Display section and related fields & settings on plugin options page.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function init_display_settings() {
+
+		// Register a setting for each field
+		register_setting( 'mrr_settings', 'mrr_setting_display_sortorder' );
+		register_setting( 'mrr_settings', 'mrr_setting_display_maxdisplayreviews' );
+		register_setting( 'mrr_settings', 'mrr_setting_display_minrating' );
+
+		// Add section
+		add_settings_section(
+			'mrr_section_display',
+			__( 'Display (Shortcode) Settings', 'ssmrr' ),
+			array( $this, 'mrr_section_display_html' ),
+			'my_restaurant_reviews'
+		);
+
+		// Add fields
+		add_settings_field(
+			'mrr_field_display_sortorder',
+			__( 'Display reviews in this order', 'ssmrr' ),
+			array( $this, 'mrr_field_display_sortorder_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_display',
+			[ 'label_for' => 'mrr_field_display_sortorder' ]
+		);
+		add_settings_field(
+			'mrr_field_display_maxdisplayreviews',
+			__( 'How many reviews to display at max?', 'ssmrr' ),
+			array( $this, 'mrr_field_display_maxdisplayreviews_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_display',
+			[ 'label_for' => 'mrr_field_display_maxdisplayreviews' ]
+		);
+		add_settings_field(
+			'mrr_field_display_minrating',
+			__( 'Do not show reviews with rating below (1-5)', 'ssmrr' ),
+			array( $this, 'mrr_field_display_minrating_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_display',
+			[ 'label_for' => 'mrr_field_display_minrating' ]
+		);
+	}
+
+	/**
 	 * Add General section and related fields & settings on plugin options page.
 	 * 
 	 * @since			1.0.0
@@ -185,7 +251,6 @@ class MyRestaurantReviewsAdmin {
 		register_setting( 'mrr_settings', 'mrr_setting_general_polltime' );
 		register_setting( 'mrr_settings', 'mrr_setting_general_category' );
 		register_setting( 'mrr_settings', 'mrr_setting_general_maxfetchreviews' );
-		register_setting( 'mrr_settings', 'mrr_setting_general_minrating' );
 
 		// Add section
 		add_settings_section(
@@ -213,36 +278,12 @@ class MyRestaurantReviewsAdmin {
 			[ 'label_for' => 'mrr_field_general_category' ]
 		);
 		add_settings_field(
-			'mrr_field_general_sortorder',
-			__( 'Display reviews in this order', 'ssmrr' ),
-			array( $this, 'mrr_field_general_sortorder_html' ),
-			'my_restaurant_reviews',
-			'mrr_section_general',
-			[ 'label_for' => 'mrr_field_general_sortorder' ]
-		);
-		add_settings_field(
-			'mrr_field_general_maxdisplayreviews',
-			__( 'How many reviews to display at max?', 'ssmrr' ),
-			array( $this, 'mrr_field_general_maxdisplayreviews_html' ),
-			'my_restaurant_reviews',
-			'mrr_section_general',
-			[ 'label_for' => 'mrr_field_general_maxdisplayreviews' ]
-		);
-		add_settings_field(
 			'mrr_field_general_maxfetchreviews',
 			__( 'How many new reviews to fetch from each source at max?', 'ssmrr' ),
 			array( $this, 'mrr_field_general_maxfetchreviews_html' ),
 			'my_restaurant_reviews',
 			'mrr_section_general',
 			[ 'label_for' => 'mrr_field_general_maxfetchreviews' ]
-		);
-		add_settings_field(
-			'mrr_field_general_minrating',
-			__( 'Do not show reviews with rating below (1-5)', 'ssmrr' ),
-			array( $this, 'mrr_field_general_minrating_html' ),
-			'my_restaurant_reviews',
-			'mrr_section_general',
-			[ 'label_for' => 'mrr_field_general_minrating' ]
 		);
 
 	}
@@ -271,6 +312,17 @@ class MyRestaurantReviewsAdmin {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+			<div class="mrr-settings-section-notice">
+				<p class="title"><?php echo __( 'Thank you for using My Restaurant Reviews.' ); ?></p>
+				<p><?php echo __( 'You can show your restaurant\'s reviews in either or both of the following two ways:' ); ?></p>
+				<ul>
+					<li><?php echo __( 'use the shortcode <code>[my-restaurant-reviews]</code> in a post or page of your choice' ); ?></li>
+					<li><?php echo __( 'enable the option to create posts for new reviews in General Settings below' ); ?></li>
+				</ul>
+				<p><?php echo __( 'The second option is especially helpful with certain themes, ' .
+							'such as <a href="https://wordpress.org/themes/food-restro/">Food Restro</a>, ' .
+							'that tie up a slide/carousel/list section with a post category.' ); ?></p>
+			</div>
 			<form id="mrrOptionsForm" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
 				<?php
 				// Under normal conditions, using the following WP function call
@@ -355,6 +407,89 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Outputs the HTML for Display section on plugin's options page.
+	 * Callable for add_settings_section.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_section_display_html() {
+
+		?>
+		<div class="mrr-settings-section-notice">
+			<?php echo esc_html_e( 'This section contains settings related to how reviews are displayed '.
+														 'via the [my-restaurant-review] shortcode.', 'ssmrr' ); ?>
+		</div>
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Sort Order field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_display_sortorder_html( $args ) {
+
+		$selected_sortorder = get_option( 'mrr_setting_display_sortorder', 'timedesc' );
+		?>
+		<select name="mrr_setting_display_sortorder">
+			<?php
+				$orders = array(
+					'timedesc' => __( 'Latest First' ),
+					'timeasc' => __( 'Oldest First' ),
+					'random' => __( 'Random' )
+				);
+				foreach ( $orders as $value => $display_name ) {
+					?>
+					<option value="<?php echo $value ?>"
+						<?php echo $value === $selected_sortorder ? 'selected' : ''; ?>>
+						<?php echo $display_name; ?>
+					</option>
+				<?php
+				}
+			?>
+		</select>
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Max Display Reviews field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_display_maxdisplayreviews_html( $args ) {
+
+		$max_num = get_option( 'mrr_setting_display_maxdisplayreviews', 10 );
+		?>
+		<input type="number" name="mrr_setting_display_maxdisplayreviews" class="small-text"
+			value="<?php echo esc_attr( $max_num ); ?>" />
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Min Rating field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_display_minrating_html( $args ) {
+
+		$max_num = get_option( 'mrr_setting_display_minrating', 4 );
+		?>
+		<input type="number" name="mrr_setting_display_minrating" class="small-text"
+			min="1" max="5" value="<?php echo esc_attr( $max_num ); ?>" />
+		<p class="description">
+			<?php echo __( 'A change in this setting will only apply to future reviews.', 'ssmrr' ); ?>
+		</p>		
+	<?php
+
+	}
+
+	/**
 	 * Outputs the HTML for General section on plugin's options page.
 	 * Callable for add_settings_section.
 	 * 
@@ -431,53 +566,6 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
-	 * Outputs the HTML for Sort Order field.
-	 * Callable for add_settings_field.
-	 * 
-	 * @since			1.0.0
-	 */
-	public function mrr_field_general_sortorder_html( $args ) {
-
-		$selected_sortorder = get_option( 'mrr_setting_general_sortorder', 'timedesc' );
-		?>
-		<select name="mrr_setting_general_sortorder">
-			<?php
-				$orders = array(
-					'timedesc' => __( 'Latest First' ),
-					'timeasc' => __( 'Oldest First' ),
-					'random' => __( 'Random' )
-				);
-				foreach ( $orders as $value => $display_name ) {
-					?>
-					<option value="<?php echo $value ?>"
-						<?php echo $value === $selected_sortorder ? 'selected' : ''; ?>>
-						<?php echo $display_name; ?>
-					</option>
-				<?php
-				}
-			?>
-		</select>
-	<?php
-
-	}
-
-	/**
-	 * Outputs the HTML for Max Display Reviews field.
-	 * Callable for add_settings_field.
-	 * 
-	 * @since			1.0.0
-	 */
-	public function mrr_field_general_maxdisplayreviews_html( $args ) {
-
-		$max_num = get_option( 'mrr_setting_general_maxdisplayreviews', 10 );
-		?>
-		<input type="number" name="mrr_setting_general_maxdisplayreviews" class="small-text"
-			value="<?php echo esc_attr( $max_num ); ?>" />
-	<?php
-
-	}
-
-	/**
 	 * Outputs the HTML for Max Fetch Reviews field.
 	 * Callable for add_settings_field.
 	 * 
@@ -489,25 +577,6 @@ class MyRestaurantReviewsAdmin {
 		?>
 		<input type="number" name="mrr_setting_general_maxfetchreviews" class="small-text"
 			value="<?php echo esc_attr( $max_num ); ?>" />
-	<?php
-
-	}
-
-	/**
-	 * Outputs the HTML for Min Rating field.
-	 * Callable for add_settings_field.
-	 * 
-	 * @since			1.0.0
-	 */
-	public function mrr_field_general_minrating_html( $args ) {
-
-		$max_num = get_option( 'mrr_setting_general_minrating', 4 );
-		?>
-		<input type="number" name="mrr_setting_general_minrating" class="small-text"
-			min="1" max="5" value="<?php echo esc_attr( $max_num ); ?>" />
-		<p class="description">
-			<?php echo __( 'A change in this setting will only apply to future reviews.', 'ssmrr' ); ?>
-		</p>		
 	<?php
 
 	}
@@ -547,12 +616,12 @@ class MyRestaurantReviewsAdmin {
 		$mrr_settings = array(
 			'mrr_setting_zomato_apikey' => sanitize_key( $_POST[ 'mrr_setting_zomato_apikey' ] ),
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
+			'mrr_setting_display_sortorder' => sanitize_text_field( $_POST[ 'mrr_setting_display_sortorder' ] ),
+			'mrr_setting_display_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_display_maxdisplayreviews' ] ),
+			'mrr_setting_display_minrating' => absint( $_POST[ 'mrr_setting_display_minrating' ] ),
 			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] ),
 			'mrr_setting_general_category' => absint( $_POST[ 'mrr_setting_general_category' ] ),
-			'mrr_setting_general_sortorder' => sanitize_text_field( $_POST[ 'mrr_setting_general_sortorder' ] ),
-			'mrr_setting_general_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_general_maxdisplayreviews' ] ),
-			'mrr_setting_general_maxfetchreviews' => absint( $_POST[ 'mrr_setting_general_maxfetchreviews' ] ),
-			'mrr_setting_general_minrating' => absint( $_POST[ 'mrr_setting_general_minrating' ] )
+			'mrr_setting_general_maxfetchreviews' => absint( $_POST[ 'mrr_setting_general_maxfetchreviews' ] )
 		);
 		foreach ( $mrr_settings as $key => $value ) {
 			$this->set_option( $key, $value );

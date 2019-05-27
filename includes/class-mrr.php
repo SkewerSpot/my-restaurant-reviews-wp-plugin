@@ -156,8 +156,9 @@ class MyRestaurantReviews
 
 		$plugin_admin = new MyRestaurantReviewsAdmin($this->get_plugin_name(), $this->get_version());
 
-		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
-		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'plugin_action_links_' . dirname( plugin_basename( __DIR__ ) ) . '/my-restaurant-reviews.php', $plugin_admin, 'add_action_links' );
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_settings_page' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'initialize_settings' );
 		$this->loader->add_action( 'admin_post_mrr_options_form', $plugin_admin, 'handle_options_form_submission' );

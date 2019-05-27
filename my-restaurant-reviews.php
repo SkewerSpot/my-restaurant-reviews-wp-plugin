@@ -15,7 +15,7 @@
  * @wordpress-plugin
  * Plugin Name:       My Restaurant Reviews
  * Plugin URI:        https://skewerspot.com/reviews-wp-plugin/
- * Description:       Displays public ratings and reviews of your restaurant from Zomato, Google Maps and TripAdvisor. Supports shortcodes and widgets.
+ * Description:       Displays public ratings and reviews of your restaurant from online sources such as Zomato and Google.
  * Version:           1.0.0
  * Author:            Anurag Bhandari
  * Author URI:        https://anuragbhandari.com/
