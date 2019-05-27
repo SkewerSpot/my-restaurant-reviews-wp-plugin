@@ -120,8 +120,9 @@ class MyRestaurantReviewsPublic
 	public function mrr_shortcode_html($atts = [], $content = null)
 	{
 
-		// Get cached reviews from database
+		// Get cached reviews and their settings from database
 		$reviews = get_option('mrr_setting_reviews');
+		$max_display_reviews = absint( get_option( 'mrr_setting_general_maxdisplayreviews' ) );
 
 		// Build the output HTML string
 		$html = '';
@@ -131,7 +132,9 @@ class MyRestaurantReviewsPublic
 		$html .= '</div>'; // end .mrr-previous-button
 		$html .= '<div class="mrr-reviews">';
 		$html .= '<div class="mrr-quote">“</div>';
+		$review_idx = 0;
 		foreach ($reviews as $review) {
+			if ( $review_idx === $max_display_reviews ) break;
 			$html .= '<div class="mrr-review">';
 			$html .= '<div class="mrr-review-rating">';
 			$html .= '<span>Rating:&nbsp;</span>';
@@ -162,6 +165,7 @@ class MyRestaurantReviewsPublic
 			$html .= '</div>'; // end .mrr-reviewer-detail
 			$html .= '</div>'; // end .mrr-reviewer
 			$html .= '</div>'; // end .mrr-review
+			$review_idx++;
 		}
 		$html .= '</div>'; // end .mrr-reviews
 		$html .= '<div class="mrr-next-button">';

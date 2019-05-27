@@ -184,7 +184,7 @@ class MyRestaurantReviewsAdmin {
 		// Register a setting for each field
 		register_setting( 'mrr_settings', 'mrr_setting_general_polltime' );
 		register_setting( 'mrr_settings', 'mrr_setting_general_category' );
-		register_setting( 'mrr_settings', 'mrr_setting_general_maxreviews' );
+		register_setting( 'mrr_settings', 'mrr_setting_general_maxfetchreviews' );
 		register_setting( 'mrr_settings', 'mrr_setting_general_minrating' );
 
 		// Add section
@@ -213,12 +213,20 @@ class MyRestaurantReviewsAdmin {
 			[ 'label_for' => 'mrr_field_general_category' ]
 		);
 		add_settings_field(
-			'mrr_field_general_maxreviews',
-			__( 'How many maximum reviews to fetch from each source?', 'ssmrr' ),
-			array( $this, 'mrr_field_general_maxreviews_html' ),
+			'mrr_field_general_maxdisplayreviews',
+			__( 'How many reviews to display at max?', 'ssmrr' ),
+			array( $this, 'mrr_field_general_maxdisplayreviews_html' ),
 			'my_restaurant_reviews',
 			'mrr_section_general',
-			[ 'label_for' => 'mrr_field_general_maxreviews' ]
+			[ 'label_for' => 'mrr_field_general_maxdisplayreviews' ]
+		);
+		add_settings_field(
+			'mrr_field_general_maxfetchreviews',
+			__( 'How many new reviews to fetch from each source at max?', 'ssmrr' ),
+			array( $this, 'mrr_field_general_maxfetchreviews_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_general',
+			[ 'label_for' => 'mrr_field_general_maxfetchreviews' ]
 		);
 		add_settings_field(
 			'mrr_field_general_minrating',
@@ -348,8 +356,7 @@ class MyRestaurantReviewsAdmin {
 
 		?>
 		<div class="mrr-settings-section-notice">
-			<?php echo esc_html_e( 'This section contains common settings, ' .
-														 'such as review refresh frequency, etc.', 'ssmrr' ); ?>
+			<?php echo __( 'This section contains common settings and customizations.', 'ssmrr' ); ?>
 		</div>
 	<?php
 
@@ -408,21 +415,40 @@ class MyRestaurantReviewsAdmin {
 				}
 			?>
 		</select>
+		<p class="description">
+			<?php echo __( 'A change in this setting will only apply to future reviews.', 'ssmrr' ); ?>
+		</p>
 	<?php
 
 	}
 
 	/**
-	 * Outputs the HTML for Max Reviews field.
+	 * Outputs the HTML for Max Display Reviews field.
 	 * Callable for add_settings_field.
 	 * 
 	 * @since			1.0.0
 	 */
-	public function mrr_field_general_maxreviews_html( $args ) {
+	public function mrr_field_general_maxdisplayreviews_html( $args ) {
 
-		$max_num = get_option( 'mrr_setting_general_maxreviews', 5 );
+		$max_num = get_option( 'mrr_setting_general_maxdisplayreviews', 10 );
 		?>
-		<input type="number" name="mrr_setting_general_maxreviews" class="small-text"
+		<input type="number" name="mrr_setting_general_maxdisplayreviews" class="small-text"
+			value="<?php echo esc_attr( $max_num ); ?>" />
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Max Fetch Reviews field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_general_maxfetchreviews_html( $args ) {
+
+		$max_num = get_option( 'mrr_setting_general_maxfetchreviews', 5 );
+		?>
+		<input type="number" name="mrr_setting_general_maxfetchreviews" class="small-text"
 			value="<?php echo esc_attr( $max_num ); ?>" />
 	<?php
 
@@ -440,6 +466,9 @@ class MyRestaurantReviewsAdmin {
 		?>
 		<input type="number" name="mrr_setting_general_minrating" class="small-text"
 			min="1" max="5" value="<?php echo esc_attr( $max_num ); ?>" />
+		<p class="description">
+			<?php echo __( 'A change in this setting will only apply to future reviews.', 'ssmrr' ); ?>
+		</p>		
 	<?php
 
 	}
@@ -481,7 +510,8 @@ class MyRestaurantReviewsAdmin {
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
 			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] ),
 			'mrr_setting_general_category' => absint( $_POST[ 'mrr_setting_general_category' ] ),
-			'mrr_setting_general_maxreviews' => absint( $_POST[ 'mrr_setting_general_maxreviews' ] ),
+			'mrr_setting_general_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_general_maxdisplayreviews' ] ),
+			'mrr_setting_general_maxfetchreviews' => absint( $_POST[ 'mrr_setting_general_maxfetchreviews' ] ),
 			'mrr_setting_general_minrating' => absint( $_POST[ 'mrr_setting_general_minrating' ] )
 		);
 		foreach ( $mrr_settings as $key => $value ) {
@@ -516,7 +546,7 @@ class MyRestaurantReviewsAdmin {
 	public function update_reviews() {
 
 		// Fetch latest online reviews
-		$max_num_reviews = get_option( 'mrr_setting_general_maxreviews' );
+		$max_num_reviews = get_option( 'mrr_setting_general_maxfetchreviews' );
 		$min_rating = absint( get_option( 'mrr_setting_general_minrating' ) );
 		$latest_reviews = array_merge( array(), $this->get_zomato_reviews( $max_num_reviews ) );
 		$new_reviews = $this->find_new_reviews( $latest_reviews, $min_rating );
