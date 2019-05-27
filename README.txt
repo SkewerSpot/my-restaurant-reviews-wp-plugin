@@ -1,113 +1,54 @@
-=== Plugin Name ===
+=== My Restaurant Reviews ===
 Contributors: anuragbhandari
-Tags: reviews, zomato, google-maps, tripadvisor
-Requires at least: 3.0.1
-Tested up to: 3.4
+Tags: reviews, restaurant, zomato, google, google-maps, google-my-business
+Requires at least: 4.0
+Tested up to: 5.2
 Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Here is a short description of the plugin.  This should be no more than 150 characters.  No markup here.
+Displays public ratings and reviews of your restaurant from online sources such as Zomato and Google.
 
 == Description ==
 
-This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
+My Restaurant Reviews (Mr.R) is a simple plugin that aggregates reviews of your restaurant from
+several online sources and displays them on your WordPress site. Mr.R offers a shortcode `[my-restaurant-reviews]`
+that can be used on a post or a page to show aggregated reviews.
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+Mr.R is quite flexbile and offers several customization options (more will be added soon).
+It currently supports [Zomato](https://zomato.com) and [Google](https://www.google.com/intl/en_in/business/)
+as its online review sources. If you are a developer, Mr.R would love if you could lend a hand in
+adding support for more sources (eg. Yelp, TripAdvisor, OpenTable, Swiggy). Seriously, that'd make Mr.R very happy.
 
-A few notes about the sections above:
+Reviews from online sources are fetched and cached in database for later retrieval and displaying.
+It is also possible to have Mr.R create blog posts of every new review fetched.
+There are plenty of F&B and restaurant WP themes (eg. [Food Restro](https://wordpress.org/themes/food-restro/))
+that come bundled with a testimonials section, the content for which must be tied up with a post category.
 
-*   "Contributors" is a comma separated list of wp.org/wp-plugins.org usernames
-*   "Tags" is a comma separated list of tags that apply to the plugin
-*   "Requires at least" is the lowest version that the plugin will work on
-*   "Tested up to" is the highest version that you've *successfully used to test the plugin*. Note that it might work on
-higher versions... this is just the highest one you've verified.
-*   Stable tag should indicate the Subversion "tag" of the latest stable version, or "trunk," if you use `/trunk/` for
-stable.
-
-    Note that the `readme.txt` of the stable tag is the one that is considered the defining one for the plugin, so
-if the `/trunk/readme.txt` file says that the stable tag is `4.3`, then it is `/tags/4.3/readme.txt` that'll be used
-for displaying information about the plugin.  In this situation, the only thing considered from the trunk `readme.txt`
-is the stable tag pointer.  Thus, if you develop in trunk, you can update the trunk `readme.txt` to reflect changes in
-your in-development version, without having that information incorrectly disclosed about the current stable version
-that lacks those changes -- as long as the trunk's `readme.txt` points to the correct stable tag.
-
-    If no stable tag is provided, it is assumed that trunk is stable, but you should specify "trunk" if that's where
-you put the stable version, in order to eliminate any doubt.
+_Icon made by Flat Icons from www.flaticon.com_
 
 == Installation ==
 
-This section describes how to install the plugin and get it working.
-
-e.g.
-
-1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Place `<?php do_action('plugin_name_hook'); ?>` in your templates
+1. Visit 'Plugins > Add New'
+2. Search for 'My Restaurant Reviews'
+3. Activate MRR from your Plugins page
+4. Visit 'Settings > My Restaurant Reviews' and adjust your configuration
+5. Save settings to fetch online reviews for the first time
+6. Stand back and wait for the big bang ;)
 
 == Frequently Asked Questions ==
 
-= A question that someone might have =
+= How do I get API key for Zomato? =
 
-An answer to that question.
-
-= What about foo bar? =
-
-Answer to foo bar dilemma.
+Check [Zomato Developers](https://developers.zomato.com/api) API page.
 
 == Screenshots ==
 
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+1. Reviews displayed in a slider using shortcode.
+2. Plugin settings page in WP Admin.
 
 == Changelog ==
 
 = 1.0 =
-* A change since the previous version.
-* Another change.
-
-= 0.5 =
-* List versions from most recent at top to oldest at bottom.
-
-== Upgrade Notice ==
-
-= 1.0 =
-Upgrade notices describe the reason a user should upgrade.  No more than 300 characters.
-
-= 0.5 =
-This version fixes a security related bug.  Upgrade immediately.
-
-== Arbitrary section ==
-
-You may provide arbitrary sections, in the same format as the ones above.  This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation."  Arbitrary sections will be shown below the built-in sections outlined above.
-
-== A brief Markdown Example ==
-
-Ordered list:
-
-1. Some feature
-1. Another feature
-1. Something else about the plugin
-
-Unordered list:
-
-* something
-* something else
-* third thing
-
-Here's a link to [WordPress](http://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax].
-Titles are optional, naturally.
-
-[markdown syntax]: http://daringfireball.net/projects/markdown/syntax
-            "Markdown is what the parser uses to process much of the readme file"
-
-Markdown uses email style notation for blockquotes and I've been told:
-> Asterisks for *emphasis*. Double it up  for **strong**.
-
-`<?php code(); // goes in backticks ?>`
+* Initial release version.
+* Supported online review sources: [Zomato](https://zomato.com) and [Google](https://www.google.com/intl/en_in/business/).
