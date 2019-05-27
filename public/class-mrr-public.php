@@ -121,8 +121,26 @@ class MyRestaurantReviewsPublic
 	{
 
 		// Get cached reviews and their settings from database
-		$reviews = get_option('mrr_setting_reviews');
+		$reviews = get_option( 'mrr_setting_reviews' );
+		$sort_order = get_option( 'mrr_setting_general_sortorder' );
 		$max_display_reviews = absint( get_option( 'mrr_setting_general_maxdisplayreviews' ) );
+
+		// Sort the reviews array as per setting
+		if ( $reviews && $sort_order ) {
+			switch( $sort_order ) {
+				case 'timedesc':
+					$timestamps = array_column( $reviews, 'timestamp' );
+					array_multisort( $timestamps, SORT_DESC, $reviews );
+					break;
+				case 'timeasc':
+					$timestamps = array_column( $reviews, 'timestamp' );
+					array_multisort( $timestamps, SORT_ASC, $reviews );
+					break;
+				case 'random':
+					$reviews = $this->shuffle_assoc( $reviews );
+					break;
+			}
+		}
 
 		// Build the output HTML string
 		$html = '';
@@ -177,7 +195,12 @@ class MyRestaurantReviewsPublic
 
 	}
 
-	public function get_source_url($source = null) {
+	/**
+	 * Builds and returns the URL of restaurant as listed on the given source.
+	 * 
+	 * @since    1.0.0
+	 */
+	private function get_source_url($source = null) {
 
 		$url = '';
 
@@ -190,4 +213,26 @@ class MyRestaurantReviewsPublic
 		return $url;
 
 	}
+
+	/**
+	 * Shuffle associative and non-associative array while preserving key, value pairs.
+	 * Also returns the shuffled array instead of shuffling it in place.
+	 * https://www.php.net/manual/en/function.shuffle.php#99624
+	 * 
+	 * @since    1.0.0
+	 */
+	private function shuffle_assoc($list) { 
+
+		if (!is_array($list)) return $list; 
+	
+		$keys = array_keys($list); 
+		shuffle($keys); 
+		$random = array(); 
+		foreach ($keys as $key) 
+			$random[$key] = $list[$key]; 
+	
+		return $random; 
+
+	} 
+
 }

@@ -213,6 +213,14 @@ class MyRestaurantReviewsAdmin {
 			[ 'label_for' => 'mrr_field_general_category' ]
 		);
 		add_settings_field(
+			'mrr_field_general_sortorder',
+			__( 'Display reviews in this order', 'ssmrr' ),
+			array( $this, 'mrr_field_general_sortorder_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_general',
+			[ 'label_for' => 'mrr_field_general_sortorder' ]
+		);
+		add_settings_field(
 			'mrr_field_general_maxdisplayreviews',
 			__( 'How many reviews to display at max?', 'ssmrr' ),
 			array( $this, 'mrr_field_general_maxdisplayreviews_html' ),
@@ -423,6 +431,37 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Outputs the HTML for Sort Order field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_general_sortorder_html( $args ) {
+
+		$selected_sortorder = get_option( 'mrr_setting_general_sortorder', 'timedesc' );
+		?>
+		<select name="mrr_setting_general_sortorder">
+			<?php
+				$orders = array(
+					'timedesc' => __( 'Latest First' ),
+					'timeasc' => __( 'Oldest First' ),
+					'random' => __( 'Random' )
+				);
+				foreach ( $orders as $value => $display_name ) {
+					?>
+					<option value="<?php echo $value ?>"
+						<?php echo $value === $selected_sortorder ? 'selected' : ''; ?>>
+						<?php echo $display_name; ?>
+					</option>
+				<?php
+				}
+			?>
+		</select>
+	<?php
+
+	}
+
+	/**
 	 * Outputs the HTML for Max Display Reviews field.
 	 * Callable for add_settings_field.
 	 * 
@@ -510,6 +549,7 @@ class MyRestaurantReviewsAdmin {
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
 			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] ),
 			'mrr_setting_general_category' => absint( $_POST[ 'mrr_setting_general_category' ] ),
+			'mrr_setting_general_sortorder' => sanitize_text_field( $_POST[ 'mrr_setting_general_sortorder' ] ),
 			'mrr_setting_general_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_general_maxdisplayreviews' ] ),
 			'mrr_setting_general_maxfetchreviews' => absint( $_POST[ 'mrr_setting_general_maxfetchreviews' ] ),
 			'mrr_setting_general_minrating' => absint( $_POST[ 'mrr_setting_general_minrating' ] )
