@@ -130,6 +130,7 @@ class MyRestaurantReviewsPublic
 		$sort_order = get_option( 'mrr_setting_display_sortorder' );
 		$max_display_reviews = absint( get_option( 'mrr_setting_display_maxdisplayreviews' ) );
 		$min_rating = absint( get_option( 'mrr_setting_display_minrating' ) );
+		$max_words = absint( get_option( 'mrr_setting_display_maxwords' ) );
 
 		// Filter out reviews with rating less than min rating setting
 		foreach ( $reviews as $idx => $review ) {
@@ -176,7 +177,10 @@ class MyRestaurantReviewsPublic
 			}
 			$html .= '</div>'; // end .mrr-review-rating
 			$html .= '<div class="mrr-review-text">';
-			$html .= esc_html($review['review_text']);
+			$review_text = $review['review_text'];
+			if ( ! $max_words ) $max_words = 55;
+			$review_text = wp_trim_words( $review_text, $max_words );
+			$html .= esc_html( $review_text );
 			$html .= '</div>'; // end .mrr-review-text
 			$html .= '<div class="mrr-reviewer">';
 			$html .= '<div class="mrr-reviewer-image">';

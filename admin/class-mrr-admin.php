@@ -243,6 +243,7 @@ class MyRestaurantReviewsAdmin {
 		register_setting( 'mrr_settings', 'mrr_setting_display_sortorder' );
 		register_setting( 'mrr_settings', 'mrr_setting_display_maxdisplayreviews' );
 		register_setting( 'mrr_settings', 'mrr_setting_display_minrating' );
+		register_setting( 'mrr_settings', 'mrr_setting_display_maxwords' );
 
 		// Add section
 		add_settings_section(
@@ -276,6 +277,14 @@ class MyRestaurantReviewsAdmin {
 			'my_restaurant_reviews',
 			'mrr_section_display',
 			[ 'label_for' => 'mrr_field_display_minrating' ]
+		);
+		add_settings_field(
+			'mrr_field_display_maxwords',
+			__( 'How many words after which review will be clipped?', 'ssmrr' ),
+			array( $this, 'mrr_field_display_maxwords_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_display',
+			[ 'label_for' => 'mrr_field_display_maxwords' ]
 		);
 	}
 
@@ -584,6 +593,22 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Outputs the HTML for Max Words field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_display_maxwords_html( $args ) {
+
+		$max_words = get_option( 'mrr_setting_display_maxwords', 55 );
+		?>
+		<input type="number" name="mrr_setting_display_maxwords" class="small-text"
+			min="15" max="150" value="<?php echo esc_attr( $max_words ); ?>" />	
+	<?php
+
+	}
+
+	/**
 	 * Outputs the HTML for General section on plugin's options page.
 	 * Callable for add_settings_section.
 	 * 
@@ -718,6 +743,7 @@ class MyRestaurantReviewsAdmin {
 			'mrr_setting_display_sortorder' => sanitize_text_field( $_POST[ 'mrr_setting_display_sortorder' ] ),
 			'mrr_setting_display_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_display_maxdisplayreviews' ] ),
 			'mrr_setting_display_minrating' => absint( $_POST[ 'mrr_setting_display_minrating' ] ),
+			'mrr_setting_display_maxwords' => absint( $_POST[ 'mrr_setting_display_maxwords' ] ),
 			'mrr_setting_general_polltime' => sanitize_text_field( $_POST[ 'mrr_setting_general_polltime' ] ),
 			'mrr_setting_general_category' => absint( $_POST[ 'mrr_setting_general_category' ] ),
 			'mrr_setting_general_maxfetchreviews' => absint( $_POST[ 'mrr_setting_general_maxfetchreviews' ] )
