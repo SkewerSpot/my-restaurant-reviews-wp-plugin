@@ -14,3 +14,4 @@
   ** Paragraphs (with custom CSS class)
 * Reviewer's pic as featured image of post.
 * Support for more online review sources. Eg. Yelp, TripAdvisor, OpenTable, Swiggy, etc.
+* Custom polling interval for fetching new reviews.
