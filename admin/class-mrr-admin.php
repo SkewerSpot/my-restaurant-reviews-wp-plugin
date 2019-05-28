@@ -148,6 +148,7 @@ class MyRestaurantReviewsAdmin {
 	public function initialize_settings() {
 
 		$this->init_zomato_settings();
+		$this->init_google_settings();
 		$this->init_display_settings();
 		$this->init_general_settings();
 
@@ -181,7 +182,6 @@ class MyRestaurantReviewsAdmin {
 			'mrr_section_zomato',
 			[ 'label_for' => 'mrr_field_zomato_apikey' ]
 		);
-
 		add_settings_field(
 			'mrr_field_zomato_restid',
 			__( 'Restaurant ID', 'ssmrr' ),
@@ -189,6 +189,45 @@ class MyRestaurantReviewsAdmin {
 			'my_restaurant_reviews',
 			'mrr_section_zomato',
 			[ 'label_for' => 'mrr_field_zomato_restid' ]
+		);
+
+	}
+
+	/**
+	 * Add Google section and related fields & settings on plugin options page.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function init_google_settings() {
+
+		// Register a setting for each field
+		register_setting( 'mrr_settings', 'mrr_setting_google_apikey' );
+		register_setting( 'mrr_settings', 'mrr_setting_google_placeid' );
+
+		// Add section
+		add_settings_section(
+			'mrr_section_google',
+			__( 'Google Settings', 'ssmrr' ),
+			array( $this, 'mrr_section_google_html' ),
+			'my_restaurant_reviews'
+		);
+
+		// Add fields
+		add_settings_field(
+			'mrr_field_google_apikey',
+			__( 'API Key', 'ssmrr' ),
+			array( $this, 'mrr_field_google_apikey_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_google',
+			[ 'label_for' => 'mrr_field_google_apikey' ]
+		);
+		add_settings_field(
+			'mrr_field_google_placeid',
+			__( 'Place ID', 'ssmrr' ),
+			array( $this, 'mrr_field_google_placeid_html' ),
+			'my_restaurant_reviews',
+			'mrr_section_google',
+			[ 'label_for' => 'mrr_field_google_placeid' ]
 		);
 
 	}
@@ -407,6 +446,64 @@ class MyRestaurantReviewsAdmin {
 	}
 
 	/**
+	 * Outputs the HTML for Google section on plugin's options page.
+	 * Callable for add_settings_section.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_section_google_html() {
+
+		?>
+		<div class="mrr-settings-section-notice">
+			<?php echo __( 'This section contains settings related to Google (Places/Maps).<br>' .
+															'<b>Important:</b> Google\'s Places API is '.
+															'<a href="https://developers.google.com/places/web-service/usage-and-billing#atmosphere-data">chargeable</a>.', 'ssmrr' ); ?>
+		</div>
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Google API Key field.
+	 * Callable for add_settings_field.
+	 */
+	public function mrr_field_google_apikey_html( $args ) {
+
+		$api_key = get_option( 'mrr_setting_google_apikey' );
+		?>
+		<input type="text" name="mrr_setting_google_apikey" class="regular-text"
+			value="<?php echo isset( $api_key ) ? esc_attr( $api_key ) : ''; ?>" />
+		<p class="description">
+			<?php echo __( 'To get an API key, head over to '.
+				'<a href="https://developers.google.com/places/web-service/get-api-key">'.
+				'Google Maps API docs</a>.', 'ssmrr' ); ?>
+		</p>
+	<?php
+
+	}
+
+	/**
+	 * Outputs the HTML for Google Maps Place ID field.
+	 * Callable for add_settings_field.
+	 * 
+	 * @since			1.0.0
+	 */
+	public function mrr_field_google_placeid_html( $args ) {
+
+		$place_id = get_option( 'mrr_setting_google_placeid' );
+		?>
+		<input type="text" name="mrr_setting_google_placeid" class="regular-text"
+			value="<?php echo isset( $place_id ) ? esc_attr( $place_id ) : ''; ?>" />
+			<p class="description">
+			<?php echo __( 'To get your restaurant\'s place ID, head over to '.
+				'<a href="https://developers.google.com/places/place-id">'.
+				'this page</a>.', 'ssmrr' ); ?>
+		</p>
+	<?php
+
+	}
+
+	/**
 	 * Outputs the HTML for Display section on plugin's options page.
 	 * Callable for add_settings_section.
 	 * 
@@ -574,6 +671,9 @@ class MyRestaurantReviewsAdmin {
 		?>
 		<input type="number" name="mrr_setting_general_maxfetchreviews" class="small-text"
 			value="<?php echo esc_attr( $max_num ); ?>" />
+		<p class="description">
+			<?php echo __( 'Zomato and Google both cap reviews returned at 5.', 'ssmrr' ); ?>
+		</p>		
 	<?php
 
 	}
@@ -613,6 +713,8 @@ class MyRestaurantReviewsAdmin {
 		$mrr_settings = array(
 			'mrr_setting_zomato_apikey' => sanitize_key( $_POST[ 'mrr_setting_zomato_apikey' ] ),
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
+			'mrr_setting_google_apikey' => sanitize_key( $_POST[ 'mrr_setting_google_apikey' ] ),
+			'mrr_setting_google_placeid' => sanitize_text_field( $_POST[ 'mrr_setting_google_placeid' ] ),
 			'mrr_setting_display_sortorder' => sanitize_text_field( $_POST[ 'mrr_setting_display_sortorder' ] ),
 			'mrr_setting_display_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_display_maxdisplayreviews' ] ),
 			'mrr_setting_display_minrating' => absint( $_POST[ 'mrr_setting_display_minrating' ] ),
@@ -687,22 +789,22 @@ class MyRestaurantReviewsAdmin {
 
 		$normalized_reviews = array();
 
-		$zomato_apikey = get_option( 'mrr_setting_zomato_apikey' );
-		$zomato_restid = get_option( 'mrr_setting_zomato_restid' );
+		$google_apikey = get_option( 'mrr_setting_zomato_apikey' );
+		$google_placeid = get_option( 'mrr_setting_zomato_restid' );
 
-		if ( ! $zomato_apikey || ! $zomato_restid ) return array();
+		if ( ! $google_apikey || ! $google_placeid ) return array();
 
 		$zomato_api_args = array(
 			'headers' => array(
-				'user-key' => $zomato_apikey
+				'user-key' => $google_apikey
 			)
 		);
-		$zomato_api_url = 'https://developers.zomato.com/api/v2.1/reviews?res_id=' . $zomato_restid . '&count=' . $max_num;
-		$zomato_api_response = wp_remote_retrieve_body( wp_remote_get( $zomato_api_url, $zomato_api_args ) );
+		$google_api_url = 'https://developers.zomato.com/api/v2.1/reviews?res_id=' . $google_placeid . '&count=' . $max_num;
+		$google_api_response = wp_remote_retrieve_body( wp_remote_get( $google_api_url, $zomato_api_args ) );
 		
-		if ( $zomato_api_response ) {
-			$zomato_api_response_json = json_decode( $zomato_api_response, true );
-			$reviews = $zomato_api_response_json[ 'user_reviews' ];
+		if ( $google_api_response ) {
+			$google_api_response_json = json_decode( $google_api_response, true );
+			$reviews = $google_api_response_json[ 'user_reviews' ];
 			if ( is_array( $reviews ) ) {
 				foreach ( $reviews as $review ) {
 					$r = array(
@@ -713,6 +815,48 @@ class MyRestaurantReviewsAdmin {
 						'reviewer_image' => $review[ 'review' ][ 'user' ][ 'profile_image' ],
 						'source' => 'Zomato',
 						'orig_id' => $review[ 'review' ][ 'id' ]
+					);
+					array_push( $normalized_reviews, $r );
+				}
+			}
+		}
+
+		return $normalized_reviews;
+		
+	}
+
+	/**
+	 * Fetches latest $max_num reviews from Google Places API,
+	 * and returns them is a normalized format.
+	 * 
+	 * @since			1.0.0
+	 */
+	private function get_google_reviews($max_num) {
+
+		$normalized_reviews = array();
+
+		$google_apikey = get_option( 'mrr_setting_google_apikey' );
+		$google_placeid = get_option( 'mrr_setting_google_placeid' );
+
+		if ( ! $google_apikey || ! $google_placeid ) return array();
+
+		$google_api_url = 'https://maps.googleapis.com/maps/api/place/details/json?fields=reviews&placeid=' .
+												$google_placeid . '&key=' . $google_apikey;
+		$google_api_response = wp_remote_retrieve_body( wp_remote_get( $google_api_url ) );
+		
+		if ( $google_api_response ) {
+			$google_api_response_json = json_decode( $google_api_response, true );
+			$reviews = $google_api_response_json[ 'result' ][ 'reviews' ];
+			if ( is_array( $reviews ) ) {
+				foreach ( $reviews as $review ) {
+					$r = array(
+						'rating' => $review[ 'rating' ],
+						'review_text' => $review[ 'text' ],
+						'timestamp' => $review[ 'time' ],
+						'reviewer_name' => $review[ 'author_name' ],
+						'reviewer_image' => $review[ 'profile_photo_url' ],
+						'source' => 'Google',
+						'orig_id' => ''
 					);
 					array_push( $normalized_reviews, $r );
 				}
@@ -754,7 +898,8 @@ class MyRestaurantReviewsAdmin {
 
 		if ( $stored_reviews && is_array( $review ) ) {
 			foreach ( $stored_reviews as $r ) {
-				if ( $r[ 'orig_id' ] === $review[ 'orig_id' ]
+				if ( $r[ 'reviewer_name' ] === $review[ 'reviewer_name' ]
+						 && $r[ 'timestamp' ] === $review[ 'timestamp' ]
 						 && $r[ 'source' ] === $review[ 'source' ] ) {
 					return false;
 			 }
