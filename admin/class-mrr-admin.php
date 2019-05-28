@@ -713,7 +713,7 @@ class MyRestaurantReviewsAdmin {
 		$mrr_settings = array(
 			'mrr_setting_zomato_apikey' => sanitize_key( $_POST[ 'mrr_setting_zomato_apikey' ] ),
 			'mrr_setting_zomato_restid' => sanitize_text_field( $_POST[ 'mrr_setting_zomato_restid' ] ),
-			'mrr_setting_google_apikey' => sanitize_key( $_POST[ 'mrr_setting_google_apikey' ] ),
+			'mrr_setting_google_apikey' => sanitize_text_field( $_POST[ 'mrr_setting_google_apikey' ] ),
 			'mrr_setting_google_placeid' => sanitize_text_field( $_POST[ 'mrr_setting_google_placeid' ] ),
 			'mrr_setting_display_sortorder' => sanitize_text_field( $_POST[ 'mrr_setting_display_sortorder' ] ),
 			'mrr_setting_display_maxdisplayreviews' => absint( $_POST[ 'mrr_setting_display_maxdisplayreviews' ] ),
@@ -755,7 +755,11 @@ class MyRestaurantReviewsAdmin {
 
 		// Fetch latest online reviews
 		$max_num_reviews = get_option( 'mrr_setting_general_maxfetchreviews' );
-		$latest_reviews = array_merge( array(), $this->get_zomato_reviews( $max_num_reviews ) );
+		$latest_reviews = array_merge(
+			array(),
+			$this->get_zomato_reviews( $max_num_reviews ),
+			$this->get_google_reviews( $max_num_reviews )
+		);
 		$new_reviews = $this->find_new_reviews( $latest_reviews );
 
 		// (optionally) Create posts for new reviews
