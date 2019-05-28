@@ -1,0 +1,16 @@
+  _______    ____    _____     ____  
+ |__   __|  / __ \  |  __ \   / __ \ 
+    | |    | |  | | | |  | | | |  | |
+    | |    | |  | | | |  | | | |  | |
+    | |    | |__| | | |__| | | |__| |
+    |_|     \____/  |_____/   \____/ 
+                                     
+
+* Clear Cache button to delete all reviews stored as option in database.
+* More display options with shortcode.
+  ** Slider (current)
+  ** List
+  ** Accordion
+  ** Paragraphs (with custom CSS class)
+* Reviewer's pic as featured image of post.
+* Support for more online review sources. Eg. Yelp, TripAdvisor, OpenTable, Swiggy, etc.
